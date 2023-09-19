@@ -1,0 +1,51 @@
+import time
+import RPi.GPIO as GPIO
+import Adafruit_DHT
+import serial
+
+from datetime import datetime
+#se inicia el puerto serial 
+ser = serial.Serial('/dev/ttyACM0', 9600)
+
+# Función para leer el valor del porcentaje de humedad
+def leer_humedad():
+    humedad = (ser.readline())
+    tipo = str(humedad)
+    medicion = ""
+    for i in tipo:
+        if i.isnumeric():
+            medicion += i
+        p_humedad = ((1023-int(humedad)) / 1023)*100
+    return (p_humedad)
+
+
+#Define los pines del sensor DHT
+SENSOR2_PIN = 4
+sensor = Adafruit_DHT.DHT11
+
+ # ~ # Abre el archivo CSV para escribir los datos
+
+def estado(humedad):
+    HUMEDAD_SECO = 20
+    HUMEDAD_HUMEDO = 75
+    if  humedad < HUMEDAD_SECO:
+        estado = "SECO"
+    elif humedad  >= HUMEDAD_SECO and humedad < HUMEDAD_HUMEDO:
+        estado = "HUMEDO"
+    elif humedad >= HUMEDAD_HUMEDO:
+        estado = "MUY_HUMEDO"
+    return estado
+    
+
+lcFechaHora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+lcFecha = datetime.now().strftime('%Y-%m-%d')
+lcNombreArchivo = "/home/geogeeks/Documentos/Fecha"+lcFecha+".csv"
+
+miArchivo = open(lcNombreArchivo, "a")
+p_humedad = leer_humedad()
+Estado = estado(p_humedad)
+humedad_a, temperatura_a = Adafruit_DHT.read_retry(sensor, SENSOR2_PIN)
+
+lcLinea = lcFechaHora + ";" + str(humedad_a) + ";" + str(temperatura_a) + ";" + str(p_humedad) + ";" + Estado + "\n"
+miArchivo.write(lcLinea)
+miArchivo.close
